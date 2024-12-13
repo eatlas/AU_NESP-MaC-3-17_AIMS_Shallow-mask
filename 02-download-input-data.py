@@ -3,7 +3,7 @@ import os
 
 # Create an instance of the DataDownloader class
 downloader = DataDownloader(download_path="in-data-3p")
-
+VERSION = '1-1'
 
 print("Downloading source data files. This will take a while ...")
 
@@ -22,20 +22,15 @@ downloader.download_and_unzip(direct_download_url, 'AU_AIMS_Coastline_50k_2024',
 direct_download_url = 'https://nextcloud.eatlas.org.au/s/xQ8neGxxCbgWGSd/download/TS_AIMS_NESP_Torres_Strait_Features_V1b_with_GBR_Features.zip'
 downloader.download_and_unzip(direct_download_url, 'GBR_AIMS_Complete-GBR-feat_V1b')
 
-
+downloader.download_path = "in-data"
 # --------------------------------------------------------
 # The rough reef mask corresponds to the water estimate
 # masking created for the creation of this dataset
-direct_download_url = 'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?files=AU_Rough-reef-shallow-mask'
+
+direct_download_url = f'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?path=%2FV{VERSION}%2Fin-data%2FAU_Rough-reef-shallow-mask'
 downloader.download_and_unzip(direct_download_url, 'AU_Rough-reef-shallow-mask', flatten_directory=True)
 
-
-#direct_download_url = 'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?path=%2F%2FAU_Cleanup-remove-mask'
-direct_download_url = 'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?files=AU_Cleanup-remove-mask'
+direct_download_url = f'https://nextcloud.eatlas.org.au/s/iMrFB9WP9EpLPC2/download?path=%2FV{VERSION}%2Fin-data%2FAU_Cleanup-remove-mask'
 downloader.download_and_unzip(direct_download_url, 'AU_Cleanup-remove-mask', flatten_directory=True)
 
-print("The Kimberley Region and WA Reefs Satellite-Derived Bathymetry Acquisition (20210024S) dataset is used for QAQC")
-print("This dataset must be downloaded manually because GA do not provide programmatic download")
-print("https://dx.doi.org/10.26186/148669")
-print("Save to in-data/WA_GA_Kimberley-SDB_2021/")
 
