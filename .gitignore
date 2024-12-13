@@ -1,0 +1,8 @@
+/in-data
+/in-data-3p
+/out-data
+/qaqc-data
+/working-data
+/deprecated
+*.ipynb_checkpoints
+**__pycache__
