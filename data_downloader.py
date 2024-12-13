@@ -179,35 +179,3 @@ class DataDownloader:
                 self.move_files(zip_file_patterns, extract_path, unzip_path)
         # Outside the block, the temporary directory and its contents will be automatically deleted
 
-    def DEP_download_and_unzip(self, url, dataset_name, flatten_directory=False):
-        """
-        Downloads a ZIP file from the given URL and unpacks it into a folder based on the dataset_name
-        using the DOWNLOAD_PATH as the base path.
-
-        :param url: URL to download the ZIP file from.
-        :param dataset_name: The name of the dataset (used for directory naming).
-        :param flatten_directory: If True, checks if the resulting directory has a subdirectory
-                                  matching the dataset name, and moves its contents up one level.
-        """
-        unzip_path = os.path.join(self.download_path, dataset_name)
-        if os.path.exists(unzip_path):
-            print(f"Skipping {dataset_name} as unzip path exists: {unzip_path}")
-        else:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                # Download the ZIP file
-                zip_file_path = os.path.join(temp_dir, f"{dataset_name}.zip")
-                self.download(url, zip_file_path)
-
-                # Unzip the file
-                self.unzip(zip_file_path, unzip_path, "")
-
-        # Flatten the directory if the flag is set
-        if flatten_directory:
-            subfolder_path = os.path.join(unzip_path, dataset_name)
-            if os.path.exists(subfolder_path) and os.path.isdir(subfolder_path):
-                print(f"Flattening directory structure for {dataset_name}")
-                for item in os.listdir(subfolder_path):
-                    item_path = os.path.join(subfolder_path, item)
-                    shutil.move(item_path, unzip_path)
-                os.rmdir(subfolder_path)
-                print(f"Flattening complete: {dataset_name}")
