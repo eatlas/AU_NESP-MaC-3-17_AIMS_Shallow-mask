@@ -10,10 +10,6 @@ regions into a single shapefile for the entire dataset covering all of tropical 
 This assumes that the 06a-merge-scene-masks.py has been previously run.
 
 Example usage:
-python 06b-merge-regions.py --detectors Low --version 1 --sigma 40
-python 06b-merge-regions.py --detectors Medium --version 1 --sigma 40
-python 06b-merge-regions.py --detectors High --version 1 --sigma 40
-python 06b-merge-regions.py --detectors VHigh --version 1 --sigma 40
 
 python 06b-merge-regions.py --detectors Low --version 1-1 --sigma 40
 python 06b-merge-regions.py --detectors Medium --version 1-1 --sigma 40
