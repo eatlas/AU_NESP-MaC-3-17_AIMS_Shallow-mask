@@ -76,11 +76,25 @@ The environment contains the main libraries needed and their dependancies. The t
   - pandas=2.1.1
   - rasterio=1.3.10
 
+## Debug
+If you get the following error while trying to run the scripts:
+`ImportError: DLL load failed while importing cv2: The specified procedure could not be found.`
+then you need to remove open-cv from conda and reinstall using pip
+```bash
+conda remove opencv
+pip install opencv-python-headless
+```
+
+You can partly test the opencv install with:
+```bash
+python -c "import cv2; print(cv2.__version__)"
+```
+
 ### Small trial run
 The following is a small run that processes just one Sentinel 2 tile. This is useful for testing the environment setup as it doesn't require downloading and processing all the data, which iterally takes days.
 We process one tile from the GBR and one from the NorthernAU regions. You can process everything on a single tile up to `05-create-shallow-and-reef-area-masks.py`, but the `06` scripts are all about merging multiple tile together. These will be somewhat redundant in this tutorial, except to move and package the files in the correct locations for the subsequent scripts to pick up.
  
-1. **Download Source Data for 1 sentinel 2 tile**:
+1. **Download Source Data for 1 sentinel 2 tile [3 - 10 min]**:
    This will download the Sentinel 2 data for a tile (south of Cairns) on the GBR.
    ```bash
    python 01a-download-sentinel2.py --dataset 15th_percentile --region GBR --tiles 55KDA 
@@ -95,7 +109,7 @@ We process one tile from the GBR and one from the NorthernAU regions. You can pr
    python 01a-download-sentinel2.py --dataset low_tide_true_colour --region GBR --tiles 55KDA 55KDV
    ```
    Note: `01b-create-s2-virtual-rasters.py` is intended to create a virtual raster mosaic when downloading all the images for a region. Since we are only processing a single scene it doesn't need to be run.
-2. **Download auxilary input data**:
+2. **Download auxilary input data [1 min]**:
    This will download the Australian Coastline, the GBR features dataset, the Rough-reef-shallow-mask and the Cleanup-remove-mask. These are all needed for creating various masks in the processing.
    
    This will save the source data into `input-data` and `input-data-3p`, where `3p` represents datasets that are third party to this dataset. 
