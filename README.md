@@ -63,10 +63,12 @@ The dataset spans Northern Australia, GBR and Christmas Island, Cocos (Keeling) 
 conda env create -f environment.yml
 ```
 2. Activate the environment
+```bash
 conda activate reef_maps
+```
   
 ### Required Packages
-The environment contains the main libraries needed and their dependancies. The top level dependancies are:
+The following are the top level libraries needed. These will in turn pull in many dependances.
   - python=3.11.11
   - affine=2.3.0
   - geopandas=0.14.2
@@ -76,10 +78,12 @@ The environment contains the main libraries needed and their dependancies. The t
   - rasterio=1.3.10
   - opencv-python-headless=4.10.0 (installed via pip as conda was causing DLL issues)
 
+The environment.yml contains all the dependancies and allows for faster reproduction. 
+
 ## Debug
-If you get the following error while trying to run the scripts:
+When I had installed opencv using conda I got the following error: 
 `ImportError: DLL load failed while importing cv2: The specified procedure could not be found.`
-then you need to remove open-cv from conda and reinstall using pip
+To fix the problem I needed to remove open-cv from conda and reinstall using pip
 ```bash
 conda remove opencv
 pip install opencv-python-headless
