@@ -81,6 +81,7 @@ python 04-create-water-image_with_mask.py --style 15th_percentile --sigma 40 --r
 
 """
 import os
+import sys
 import glob
 import numpy as np
 import argparse
@@ -111,8 +112,6 @@ SCRIPT_NUMBER = '04'
 # Parent directory of the sentinel 2 image composites. Assumes the images are organised
 # into style/regions as sub-folders.
 S2_IMAGE_PARENT_PATH = 'in-data-3p/AU_AIMS_S2-comp' # Default if downloaded with 01-download-sentinel2.py
-
-S2_IMAGE_PARENT_PATH = 'D:/AU_NESP-MaC-3-17_AIMS_S2-comp/data/geoTiffs'
 
 # Location of the coastline dataset
 LAND_MASK_SHP = 'in-data-3p/AU_AIMS_Coastline_50k_2024/Split/AU_NESP-MaC-3-17_AIMS_Aus-Coastline-50k_2024_V1-1_split.shp'
@@ -345,6 +344,9 @@ def main():
     
     total_files = len(tiff_files)
     
+    if total_files == 0:
+        t.print(f"No input GeoTiffs found in {s2_image_base_path}. Exiting")
+        sys.exit()
     
     
     t.print("Loading land mask")
