@@ -63,23 +63,27 @@ The dataset spans Northern Australia, GBR and Christmas Island, Cocos (Keeling) 
 conda env create -f environment.yml
 ```
 2. Activate the environment
+```bash
 conda activate reef_maps
+```
   
 ### Required Packages
-The environment contains the main libraries needed and their dependancies. The top level dependancies are:
+The following are the top level libraries needed. These will in turn pull in many dependances.
   - python=3.11.11
   - affine=2.3.0
   - geopandas=0.14.2
   - matplotlib-base=3.9.2
   - numpy-base=1.26.4
-  - opencv=4.10.0
   - pandas=2.1.1
   - rasterio=1.3.10
+  - opencv-python-headless=4.10.0 (installed via pip as conda was causing DLL issues)
+
+The environment.yml contains all the dependancies and allows for faster reproduction. 
 
 ## Debug
-If you get the following error while trying to run the scripts:
+When I had installed opencv using conda I got the following error: 
 `ImportError: DLL load failed while importing cv2: The specified procedure could not be found.`
-then you need to remove open-cv from conda and reinstall using pip
+To fix the problem I needed to remove open-cv from conda and reinstall using pip
 ```bash
 conda remove opencv
 pip install opencv-python-headless
@@ -90,8 +94,9 @@ You can partly test the opencv install with:
 python -c "import cv2; print(cv2.__version__)"
 ```
 
-### Small trial run
+### Small trial run [~ 40 min]
 The following is a small run that processes just one Sentinel 2 tile. This is useful for testing the environment setup as it doesn't require downloading and processing all the data, which iterally takes days.
+
 We process one tile from the GBR and one from the NorthernAU regions. You can process everything on a single tile up to `05-create-shallow-and-reef-area-masks.py`, but the `06` scripts are all about merging multiple tile together. These will be somewhat redundant in this tutorial, except to move and package the files in the correct locations for the subsequent scripts to pick up.
  
 1. **Download Source Data for 1 sentinel 2 tile [3 - 10 min]**:
@@ -116,19 +121,21 @@ We process one tile from the GBR and one from the NorthernAU regions. You can pr
    ```bash
    python 02-download-input-data.py
    ```
-3. **Generate Rough Mask**:
+3. **Generate Rough Mask [15 min]**:
    Combine rough masks and GBR shapefiles to create a starting mask for the whole of Australia. This saves the result to `working-data`.
    ```bash
    python 03-make-rough-mask-with-gbr.py
    ```
-4. **Create Water Estimate**:
+4. **Create Water Estimate [6 min]**:
    Using the starting mask we calculate the estimated water without reefs and islands. Here we force it to just process a single image rather than a whole region. By default if the `--priority` and `--justpriority` options are left off then the script will process all the images downloaded for the region specified. They are redundant in this tutorial case, but I included them to highlight how you can process a subset of the available imagery.
    The `--sigma` corresponds to the amount of blurring (gaussian radius in pixels) that is applied after the mask areas have been replaced with an estimated infill from a large blur (160 pixels). Small values of sigma will make the detection less suseptable to turbid plume patterns, but less sensitive to large reefs that are not masked properly. This would probably make the result map the fringing coastal areas worse.
+   
+   Run the two Python calls in separate command lines will halve the execution time.
    ```bash
    python 04-create-water-image_with_mask.py --style low_tide_true_colour --sigma 40 --region GBR --priority 55KDA --justpriority True
    python 04-create-water-image_with_mask.py --style 15th_percentile --sigma 40 --region GBR --priority 55KDA --justpriority True
    ```
-5. **Create Shallow Feature Mask**
+5. **Create Shallow Feature Mask [6 min]**
    In this stage we take the difference between the satellite imagery and the water estimate to find the shallow features. We are calculating the result for two levels of detector sensitivity so that they can be combined in Step 7. Note these commands can be run in two separate terminals to speed up the processing. This is also true in later steps.
    ```bash
    python 05-create-shallow-and-reef-area-masks.py --region GBR --detectors Medium --sigma 40
@@ -136,24 +143,26 @@ We process one tile from the GBR and one from the NorthernAU regions. You can pr
    ```
    This script also supports `--priority` and `--justpriority`.
    The results of this analysis will be saved in `working-data\05-auto-mask\`. The final shapefile 
-6. **Merge Scenes and Regions**
+6. **Merge Scenes and Regions [1 min]**
    Normally this script would merge all the shapefiles corresponding to one shapefile per tile, into one shapefile per region, per level of detector sensitivity. Since we are only processing a single tile the merge is a bit redundant, however running this script will ensure the output is in the correct location for the next script.
    ```bash
-   python 06a-merge-scene-masks.py --region NorthernAU --detectors Medium --version 1-1 --sigma 40
-   python 06a-merge-scene-masks.py --region NorthernAU --detectors High --version 1-1 --sigma 40
+   python 06a-merge-scene-masks.py --region GBR --detectors Medium --version 1-1 --sigma 40
+   python 06a-merge-scene-masks.py --region GBR --detectors High --version 1-1 --sigma 40
    ```
    We also merge all the shapefiles from multiple regions into a single shapefile. This is used to combine the NorthernAU and GBR shapefiles into one. In this case it is redundant, other than making sure the files connect with the next script.
    ```bash
    python 06b-merge-regions.py --detectors Medium --version 1-1 --sigma 40
    python 06b-merge-regions.py --detectors High --version 1-1 --sigma 40
    ```
-7. **Combine Sensitivities**
+7. **Combine Sensitivities [1 min]**
    This script allows multiple detect sensitivities to be combined slightly improving the quality of the boundaries. This script takes the polygon boundaries from a more sensitive detector level, but only includes that boundary if it was detected at a low level of sensitivity. This gives the advantage of getting the boundaries mapped deeper, and thus more complete, without the additional false positives.
    Note: This only works if the regions have been processed at multiple levels of detector sensitivity.
    ```bash
    python 06c-combine-sensitivities.py --poly-sensitivity High --keep-sensitivity Medium --version 1-1
    ```
-
+8. **Review the result**
+   The generated result will be in `out-data`. The `AU_NESP-MaC-3-17_AIMS_Shallow-mask_High-Medium_V1-1.shp` can be viewed in QGIS.
+   
 ## Reproducing the Dataset
 
 Run the scripts sequentially to reproduce the dataset. Details for the command line switches for each script to reproduce the dataset are provided in the doc string at the top of each script. For parallel processing, use the `--split` and `--index` arguments.

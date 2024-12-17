@@ -95,6 +95,8 @@ overlapping_poly_gdf = poly_gdf.loc[joined_gdf.index.unique()].copy()
 print(f"Selected overlapping features in {time.time() - start_time:.2f} seconds.")
 
 # Save the result
+if not os.path.exists(os.path.dirname(output_file)):
+   os.makedirs(os.path.dirname(output_file))
 print(f"Saving combined shapefile to {output_file}...")
 start_time = time.time()
 overlapping_poly_gdf.to_file(output_file)

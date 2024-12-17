@@ -25,6 +25,7 @@ from PIL import Image
 from rasterio.enums import Resampling
 import time
 import random
+import string
 
 
 class TimePrint:
