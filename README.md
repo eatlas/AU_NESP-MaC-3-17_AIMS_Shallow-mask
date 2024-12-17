@@ -56,7 +56,7 @@ The dataset spans Northern Australia, GBR and Christmas Island, Cocos (Keeling) 
 ## Setup Instructions
 
 ### Requirements
-- **Python**: Version 3.8 or higher.
+- **Python**: Version 3.9 or higher.
 
 1. Install required Python packages using the following command:
 ```bash
@@ -158,3 +158,29 @@ We process one tile from the GBR and one from the NorthernAU regions. You can pr
 
 Run the scripts sequentially to reproduce the dataset. Details for the command line switches for each script to reproduce the dataset are provided in the doc string at the top of each script. For parallel processing, use the `--split` and `--index` arguments.
 
+## QAQC evaluation
+The QAQC for version 1-1 is incomplete. Only a prelimary assessment was developed and the scripts to assess the dataset. This identified a range of potential improves that should be made in the next version. 
+
+## Draft boundary assessment process (Not fully implemented in version 1-1)
+
+The digitisation accuracy of the masks were estimated using 300 control point locations. Random locations along the outer boundary of the Rough-reef-mask-with-GBR (03-make-rough-mask-with-gbr.py) shapefile, excluding locations overlapping land where selected as an initial control point. These locations were then randomly dithered by 100 m to ensure they do not align exactly with the Rough-reef-mask-with-GBR shapefile boundary. Each of these locations were then manually adjusted to lie somewhere on the best estimate of the boundary near the original randomly selected location. This was achieved by expert visual assessment using the following data sources: 
+1. All-tide and low-tide Sentinel 2 composite imagery (Hammerton and Lawrey, 2024a, 2024b), with local contrast enhancement.
+2. Digital Earth Australia Intertidal Extent (Bishop-Taylor et al., 2019; Bishop-Taylor et al., 2024)
+3. In the GBR and Torres Strait region the AusBathyTop 30 m bathymetry (Beaman, 2017; Beaman 2023).  
+4. In the Kimberley region the Kimberley Satellite Derived Bathymetry (Twiggs, 2023)
+5. In WA offshore the North West Shelf DEM Compilation (Lebrec et al., 2021; Lebrec, 2021)
+
+None of the boundary layers (Rough-reef-mask-with-GBR or the semi-automated mask) where turned on during the positioning of the control points. 
+
+To provide an approximate depth reference the red channel and near infrared channels of the low tide Sentinel 2 imagery were contrast enhanced to produce an -3 to -6 m contour. 
+The minimum and maximum of the imagery was adjusted to align with this bathymetry range, aligning the levels to the closest reference bathymetry. A simple satellite derive bathymetry based on the ratio of the blue and green channels was also used to provide a third estimate. The thresholds used were calibrated against the Kimberley SDB on the western side of the Dampier Peninsula, where there is clear water, and using the North West Shelf DEM south of Barrow Island, which is an area that was mapped using LADS (Lebrec et al., 2021).  
+
+In many locations the exact location of the correct boundary is highly uncertain and as a result the control points will have significant noise. This noise provides a mechanism for estimating the total uncertainty in the boundaries.
+
+This assessment assumes that with additional time, and some additional data an expert can determine the true boundary with greater accuracy than the initial manual mapping. This is a reasonable assumption for the manual rough-shallow-reef-mask as the mapping was performed at high speed, at an average rate of one reef per 30 seconds or 1.5 seconds per vertex. The accuracy assessment allowed much more time (averaging 40 seconds per vertex) to position the control point resulting in much high positioning accuracy.  
+
+This accuracy assessment is however flawed in several ways:
+1. Any biases in the interpretation of the imagery by the expert will affect the determination of the estimated true boundary and the repositioning of the vertex.
+2. Many shallow features are ambiguous in the satellite imagery, making determining the true boundary error prone regardless of the amount of time spent on each assessment.
+3. In shallow soft sediment areas definition of this dataset is only loosely defined. This dataset is intended to act as a visual clipping mask with the depth threshold varying with the water clarity. This makes it difficult to determine the true boundary that should have been mapped difficult, particularly in areas where the image gradients are low. To compensate for this in low gradient, visually uncertain areas the accuracy assessment vertex was positioned so that the measured error (difference with the original vertex position) corresponded to the level of uncertainty.
+4. The reference imagery used for determining the true boundaries is 10 m resolution. This low resolution, combined with image uncertainty makes the it difficult to reliably determine the true boundaries better than 20 m error.
