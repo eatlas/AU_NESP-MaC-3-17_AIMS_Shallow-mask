@@ -56,7 +56,7 @@ The dataset spans Northern Australia, GBR and Christmas Island, Cocos (Keeling) 
 ## Setup Instructions
 
 ### Requirements
-- **Python**: Version 3.8 or higher.
+- **Python**: Version 3.9 or higher. The scripts have been tested on Python 3.9 and 3.11.
 
 1. Install required Python packages using the following command:
 ```bash
@@ -97,9 +97,9 @@ python -c "import cv2; print(cv2.__version__)"
 ### Small trial run [~ 40 min]
 The following is a small run that processes just one Sentinel 2 tile. This is useful for testing the environment setup as it doesn't require downloading and processing all the data, which iterally takes days.
 
-We process one tile from the GBR and one from the NorthernAU regions. You can process everything on a single tile up to `05-create-shallow-and-reef-area-masks.py`, but the `06` scripts are all about merging multiple tile together. These will be somewhat redundant in this tutorial, except to move and package the files in the correct locations for the subsequent scripts to pick up.
+We process one tile from the GBR. You can process everything on a single tile up to `05-create-shallow-and-reef-area-masks.py`, but the `06` scripts are all about merging multiple tile together. These will be somewhat redundant in this tutorial, except to move and package the files to the correct locations for the subsequent scripts to pick up.
  
-1. **Download Source Data for 1 sentinel 2 tile [3 - 10 min]**:
+1. **Download Source Data for 1 sentinel 2 tile [3 - 10 min depending on network speed]**:
    This will download the Sentinel 2 data for a tile (south of Cairns) on the GBR.
    ```bash
    python 01a-download-sentinel2.py --dataset 15th_percentile --region GBR --tiles 55KDA 
