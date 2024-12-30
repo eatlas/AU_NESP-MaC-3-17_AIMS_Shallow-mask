@@ -68,7 +68,7 @@ conda activate reef_maps
 ```
   
 ### Required Packages
-The following are the top level libraries needed. These will in turn pull in many dependances.
+The following are the top level libraries needed. These will in turn pull in many dependencies.
   - python=3.11.11
   - affine=2.3.0
   - geopandas=0.14.2
@@ -76,9 +76,14 @@ The following are the top level libraries needed. These will in turn pull in man
   - numpy-base=1.26.4
   - pandas=2.1.1
   - rasterio=1.3.10
+  - scipy=1.14.1
+  - shapely=2.0.6
+  - tqdm=4.67.1
+  - scikit-image=0.24.0
+  - fiona=1.10.1
   - opencv-python-headless=4.10.0 (installed via pip as conda was causing DLL issues)
 
-The environment.yml contains all the dependancies and allows for faster reproduction. 
+The environment.yml contains all the dependencies and allows for faster reproduction. 
 
 ## Debug
 When I had installed opencv using conda I got the following error: 
@@ -95,7 +100,7 @@ python -c "import cv2; print(cv2.__version__)"
 ```
 
 ### Small trial run [~ 40 min]
-The following is a small run that processes just one Sentinel 2 tile. This is useful for testing the environment setup as it doesn't require downloading and processing all the data, which iterally takes days.
+The following is a small run that processes just one Sentinel 2 tile. This is useful for testing the environment setup as it doesn't require downloading and processing all the data, which literally takes days.
 
 We process one tile from the GBR. You can process everything on a single tile up to `05-create-shallow-and-reef-area-masks.py`, but the `06` scripts are all about merging multiple tile together. These will be somewhat redundant in this tutorial, except to move and package the files to the correct locations for the subsequent scripts to pick up.
  
@@ -114,7 +119,7 @@ We process one tile from the GBR. You can process everything on a single tile up
    python 01a-download-sentinel2.py --dataset low_tide_true_colour --region GBR --tiles 55KDA 55KDV
    ```
    Note: `01b-create-s2-virtual-rasters.py` is intended to create a virtual raster mosaic when downloading all the images for a region. Since we are only processing a single scene it doesn't need to be run.
-2. **Download auxilary input data [1 min]**:
+2. **Download auxiliary input data [1 min]**:
    This will download the Australian Coastline, the GBR features dataset, the Rough-reef-shallow-mask and the Cleanup-remove-mask. These are all needed for creating various masks in the processing.
    
    This will save the source data into `input-data` and `input-data-3p`, where `3p` represents datasets that are third party to this dataset. 
@@ -128,9 +133,9 @@ We process one tile from the GBR. You can process everything on a single tile up
    ```
 4. **Create Water Estimate [6 min]**:
    Using the starting mask we calculate the estimated water without reefs and islands. Here we force it to just process a single image rather than a whole region. By default if the `--priority` and `--justpriority` options are left off then the script will process all the images downloaded for the region specified. They are redundant in this tutorial case, but I included them to highlight how you can process a subset of the available imagery.
-   The `--sigma` corresponds to the amount of blurring (gaussian radius in pixels) that is applied after the mask areas have been replaced with an estimated infill from a large blur (160 pixels). Small values of sigma will make the detection less suseptable to turbid plume patterns, but less sensitive to large reefs that are not masked properly. This would probably make the result map the fringing coastal areas worse.
+   The `--sigma` corresponds to the amount of blurring (gaussian radius in pixels) that is applied after the mask areas have been replaced with an estimated infill from a large blur (160 pixels). Small values of sigma will make the detection less susceptible to turbid plume patterns, but less sensitive to large reefs that are not masked properly. This would probably make the result map the fringing coastal areas worse.
    
-   Run the two Python calls in separate command lines will halve the execution time.
+   Running the two Python calls in separate command lines will halve the execution time.
    ```bash
    python 04-create-water-image_with_mask.py --style low_tide_true_colour --sigma 40 --region GBR --priority 55KDA --justpriority True
    python 04-create-water-image_with_mask.py --style 15th_percentile --sigma 40 --region GBR --priority 55KDA --justpriority True
@@ -167,3 +172,29 @@ We process one tile from the GBR. You can process everything on a single tile up
 
 Run the scripts sequentially to reproduce the dataset. Details for the command line switches for each script to reproduce the dataset are provided in the doc string at the top of each script. For parallel processing, use the `--split` and `--index` arguments.
 
+## QAQC evaluation
+The QAQC for version 1-1 is incomplete. Only a prelimary assessment was developed and the scripts to assess the dataset. This identified a range of potential improves that should be made in the next version. 
+
+## Draft boundary assessment process (Not fully implemented in version 1-1)
+
+The digitisation accuracy of the masks were estimated using 300 control point locations. Random locations along the outer boundary of the Rough-reef-mask-with-GBR (03-make-rough-mask-with-gbr.py) shapefile, excluding locations overlapping land where selected as an initial control point. These locations were then randomly dithered by 100 m to ensure they do not align exactly with the Rough-reef-mask-with-GBR shapefile boundary. Each of these locations were then manually adjusted to lie somewhere on the best estimate of the boundary near the original randomly selected location. This was achieved by expert visual assessment using the following data sources: 
+1. All-tide and low-tide Sentinel 2 composite imagery (Hammerton and Lawrey, 2024a, 2024b), with local contrast enhancement.
+2. Digital Earth Australia Intertidal Extent (Bishop-Taylor et al., 2019; Bishop-Taylor et al., 2024)
+3. In the GBR and Torres Strait region the AusBathyTop 30 m bathymetry (Beaman, 2017; Beaman 2023).  
+4. In the Kimberley region the Kimberley Satellite Derived Bathymetry (Twiggs, 2023)
+5. In WA offshore the North West Shelf DEM Compilation (Lebrec et al., 2021; Lebrec, 2021)
+
+None of the boundary layers (Rough-reef-mask-with-GBR or the semi-automated mask) where turned on during the positioning of the control points. 
+
+To provide an approximate depth reference the red channel and near infrared channels of the low tide Sentinel 2 imagery were contrast enhanced to produce an -3 to -6 m contour. 
+The minimum and maximum of the imagery was adjusted to align with this bathymetry range, aligning the levels to the closest reference bathymetry. A simple satellite derive bathymetry based on the ratio of the blue and green channels was also used to provide a third estimate. The thresholds used were calibrated against the Kimberley SDB on the western side of the Dampier Peninsula, where there is clear water, and using the North West Shelf DEM south of Barrow Island, which is an area that was mapped using LADS (Lebrec et al., 2021).  
+
+In many locations the exact location of the correct boundary is highly uncertain and as a result the control points will have significant noise. This noise provides a mechanism for estimating the total uncertainty in the boundaries.
+
+This assessment assumes that with additional time, and some additional data an expert can determine the true boundary with greater accuracy than the initial manual mapping. This is a reasonable assumption for the manual rough-shallow-reef-mask as the mapping was performed at high speed, at an average rate of one reef per 30 seconds or 1.5 seconds per vertex. The accuracy assessment allowed much more time (averaging 40 seconds per vertex) to position the control point resulting in much high positioning accuracy.  
+
+This accuracy assessment is however flawed in several ways:
+1. Any biases in the interpretation of the imagery by the expert will affect the determination of the estimated true boundary and the repositioning of the vertex.
+2. Many shallow features are ambiguous in the satellite imagery, making determining the true boundary error prone regardless of the amount of time spent on each assessment.
+3. In shallow soft sediment areas definition of this dataset is only loosely defined. This dataset is intended to act as a visual clipping mask with the depth threshold varying with the water clarity. This makes it difficult to determine the true boundary that should have been mapped difficult, particularly in areas where the image gradients are low. To compensate for this in low gradient, visually uncertain areas the accuracy assessment vertex was positioned so that the measured error (difference with the original vertex position) corresponded to the level of uncertainty.
+4. The reference imagery used for determining the true boundaries is 10 m resolution. This low resolution, combined with image uncertainty makes it difficult to reliably determine the true boundaries better than 20 m error.
