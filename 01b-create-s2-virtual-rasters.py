@@ -43,18 +43,6 @@ def check_gdalbuildvrt():
     except subprocess.CalledProcessError:
         return True  # gdalbuildvrt exists but another issue occurred
 
-def check_proj_db():
-    """Check if proj.db is accessible."""
-    proj_env = os.environ.get("PROJ_LIB")
-    if proj_env and os.path.exists(proj_env):
-        proj_db_path = os.path.join(proj_env, "proj.db")
-        if os.path.exists(proj_db_path):
-            return True
-        else:
-            print(f"Warning: proj.db not found in PROJ_LIB directory: {proj_env}")
-    else:
-        print("Warning: PROJ_LIB environment variable is not set or does not point to a valid directory.")
-    return False
 
 def create_virtual_raster(base_path, style, region):
     if not check_gdalbuildvrt():
@@ -63,14 +51,6 @@ def create_virtual_raster(base_path, style, region):
         print("- Install GDAL via your package manager (e.g., apt, brew, or yum).")
         print("- Install GDAL in your Python environment using 'pip install gdal'.")
         print("- Ensure GDAL is properly added to your system PATH.")
-        return
-
-    if not check_proj_db():
-        print("Error: PROJ library is not configured correctly or proj.db is missing.")
-        print("To fix this, you can:")
-        print("- Install or reinstall PROJ and ensure the proj.db file is present.")
-        print("- Set the PROJ_LIB environment variable to the directory containing proj.db.")
-        print("- Use a conda environment with GDAL and PROJ pre-configured (e.g., 'conda install gdal').")
         return
 
     # Define input paths
