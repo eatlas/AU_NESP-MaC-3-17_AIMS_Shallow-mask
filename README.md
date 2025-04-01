@@ -2,9 +2,13 @@
 
 ## Overview
 
-This repository contains a series of scripts to calculate a comprehensive dataset of shallow marine areas across Northern Australia and the Great Barrier Reef (GBR). Derived from Sentinel-2 composite imagery, the dataset maps intertidal zones, shallow subtidal habitats (down to approximately 5 meters in turbid waters), and offshore reef features visible at depths of up to 40 meters in clear waters. The final output provides essential inputs for reef boundary mapping and shallow water habitat modeling.
+This repository contains a series of scripts to calculate a comprehensive dataset of shallow marine areas across Northern Australia and the Great Barrier Reef (GBR). Derived from Sentinel-2 composite imagery, the dataset maps intertidal zones, shallow subtidal habitats (down to 0 - -5 meters LAT in turbid waters), and offshore reef features visible at depths of up to 40 meters in clear waters. The final output provides essential inputs for reef boundary mapping and shallow water habitat modeling. 
 
-The repository contains all the code needed to reproduce the creation of the semi-automated shallow marine areas mask dataset documented at: https://eatlas.org.au/geonetwork/srv/eng/catalog.search#/metadata/1045e83b-62cd-4bf2-afb3-684c39a1a72d
+### Application
+When combined with manual reef boundary mapping (coral reefs and rocky reefs) it can be used to estimate shallow sediment areas, by subtracting these hard substrate estimates from the shallow areas mapped from this dataset. 
+
+## What does this repo contain?
+The repository contains all the code needed to reproduce the creation of the semi-automated shallow marine areas mask dataset documented at: https://doi.org/10.26274/x37r-xk75
 
 These scripts detail downloading all the source datasets and processing the final masks from the satellite imagery. Fully reproducing this dataset requires downloading 153 GB of satellite imagery along with 9 GB of other reference dataset. The processing takes approximately 12 CPU days.
 
@@ -14,44 +18,40 @@ The dataset spans Northern Australia, GBR and Christmas Island, Cocos (Keeling) 
 
 ### Scripts Overview
 
-1. **`01-download-sentinel2.py`**
-   Downloads Sentinel-2 composite imagery for specific regions and image styles. Supports resumable downloads and subsetting by region or tile.
+- **`01a-download-sentinel2.py`**
+   Downloads Sentinel-2 composite imagery for specific regions and image styles. Supports resumable downloads and subsetting by region or tile. 
 
-2. **`02-download-input-data.py`**
+- **`01b-create-s2-virtual-rasters.py`**
+   Creates virtual rasters (image mosaic) from the Sentinel 2 tile imagery to allow easy loading and editing of the imagery in QGIS.
+
+- **`02-download-input-data.py`**
    Downloads supporting datasets such as coastline shapefiles and other geospatial references.
 
-3. **`03-make-rough-mask-with-gbr.py`**
+- **`03-make-rough-mask-with-gbr.py`**
    Combines the manual Rough Reef Shallow Mask with the existing GBR and Torres Strait reef boundaries dataset to produce a rough mask for the whole of Australia. This is used to prime the creation of the water estimation.  
 
-4. **`04-create-water-image_with_mask.py`**
+- **`04-create-water-image_with_mask.py`**
    Generates a water estimate image by masking land and from the Rough Reef Shallow Mask and interpolates over these areas from the colour of the surrounding water. This water estimate allows reef detection under varying water conditions. The water estimates can be used to create a contrast enhance version of the satellite imagery (see `08-create-water-est-enhanced-imagery.py`). 
 
-5. **`05-create-shallow-and-reef-area-masks.py`**
+- **`05-create-shallow-and-reef-area-masks.py`**
    Detects shallow marine features using a combination of detectors optimized for different water conditions and sensitivity levels. This script embodies the bulk of the algorithms to map the shallow regions.
 
-6. **`06a-merge-scene-masks.py`**
+- **`06a-merge-scene-masks.py`**
    Merges individual scene outputs into a single shapefile for each region. First stage of combining.
 
-7. **`06b-merge-regions.py`**
+- **`06b-merge-regions.py`**
    Combines regional shapefiles into a single dataset for all of tropical Australia. Second stage of combining.
 
-8. **`06c-combine-sensitivities.py`**
+- **`06c-combine-sensitivities.py`**
    Refines outputs by combining masks from different sensitivity levels to improve accuracy. This is used to allow mapping boundaries from a higher sensitivity level, but only including features from a lower sensitivity level. This removes features that are just on the edge of detection, helping to clean up the data.
+   
+- **`06d-create-virtual-rasters.py`**
+   This creates virtual rasters for the input and output raster mosaics so they can be easily viewed in QGIS without having to handle many individual files. This should be run prior to opening the `Preview-maps.qgz` in QGIS. 
 
-9. **`07a-download-qaqc-data.py`**
-   Downloads additional datasets for quality assurance and quality control (QAQC). This includes bathymetry datasets.
-
-10. **`07b-generate-qaqc-boundary-points.py`**
-    Generates QAQC random points along polygon boundaries for accuracy assessment. The points created from this script must be manually aligned to the true position of the boundaries.
-
-11. **`07c-qaqc-assess-boundary-error.py`**
-    Compares boundary points against ground truth to assess positional accuracy.
-
-12. **`07d-compare-reef-masks.py`**
-    Compares manual and automated reef masks to evaluate true positives, false positives, and false negatives.
-
-13. **`08-create-water-est-enhanced-imagery.py`**
+- **`08-create-water-est-enhanced-imagery.py`**
     Enhances Sentinel-2 imagery by applying water-based local contrast adjustments.
+
+These scripts were originally written to process northern Australia and the GBR separately as the original plan was to only prepare the data for northern Australia. We decided process both regions, but the scripts are setup to process each region separately then be merged using 06b-merge-regions.
 
 ## Setup Instructions
 
@@ -167,7 +167,96 @@ We process one tile from the GBR. You can process everything on a single tile up
    ```
 8. **Review the result**
    The generated result will be in `out-data`. The `AU_NESP-MaC-3-17_AIMS_Shallow-mask_High-Medium_V1-1.shp` can be viewed in QGIS.
-   
+
+## Editing the rough-reef-shallow-mask
+The `Rough-reef-shallow-mask` is intended to mask our all areas that will pollute water estimation process. It is intended to mask shallow areas. In inshore areas where there is a strong brightness gradient the positioning of this mask is critical for the final automated mapped boundary, as it will closely follow the rough-reef-shallow-mask. For isolated islands and platform reefs the accuracy of the masking is generally less important as the water gradients around these features is typically less.
+
+This section contain notes about editing the rough-reef-shallow-mask. Editing is only necessary for corrections or improvements to be made to the mask, and is not necessary to rerun the automated analysis. These notes will also be useful for repeating this type of analysis in other areas.
+
+The `Rough-reef-shallow-mask` is edited in QGIS using a number of satellite image layers as reference. 
+
+### Setup for editing
+To start editing the `Rough-reef-shallow-mask` the input data needs to be downloaded.
+
+1. Download the satellite imagery
+```bash
+python 01-download-sentinel2.py --dataset 15th_percentile --region NorthernAU
+python 01-download-sentinel2.py --dataset low_tide_true_colour --region NorthernAU
+python 01-download-sentinel2.py --dataset low_tide_infrared --region NorthernAU
+python 01-download-sentinel2.py --dataset 15th_percentile --region GBR
+python 01-download-sentinel2.py --dataset low_tide_true_colour --region GBR
+python 01-download-sentinel2.py --dataset low_tide_infrared --region GBR
+```
+This is a full download of ~200GB and so will take a long while to complete.
+This will create the following directories each with the Geotiffs in the lower directories.
+- in-data-3p
+  - AU_AIMS_S2-comp
+    - low_tide_true_colour
+      - NorthernAU
+      - GBR
+    - 15th_percentile
+      - NorthernAU
+      - GBR
+    - low_tide_infrared
+      - NorthernAU
+      - GBR
+
+2. Create virtual rasters of the satellite imagery
+The virtual rasters need to be setup so that each image style can be treated as a single mosaic, rather than as hundreds of individual images.
+```bash
+python 01b-create-S2-virtual-rasters.py --style 15th_percentile --region all
+python 01b-create-S2-virtual-rasters.py --style low_tide_true_colour --region all
+python 01b-create-S2-virtual-rasters.py --style low_tide_infrared --region all
+```
+This will create the following virtual rasters that can be used in QGIS:
+```
+working-data\01b-S2-virtual-rasters\15th_percentile_all.vrt
+working-data\01b-S2-virtual-rasters\low_tide_true_colour_all.vrt
+working-data\01b-S2-virtual-rasters\low_tide_infrared_all.vrt
+```
+3. Download input vector datasets
+This will download the coastlines, the Torres Strait and GBR reefs, the existing public  `Rough-reef-shallow-mask` and the `'Cleanup-remove-mask`.
+```bash
+python 02-download-input-data.py
+```
+
+
+### QGIS Editing
+The `Rough-reef-shallow-mask` is edited in QGIS based on reference layers derived from Sentinel 2 composite imagery.
+
+1. Open `Edit-masks.qgz` in QGIS. This will reference data layers downloaded by `01a-download-sentinel2-py` and `02-download-input-data.py`. It will expect the imagery to be available as virtual rasters setup using `01b-create-s2-virtual-rasters.py`.
+
+### Setting up satellite depth reference layers
+The following is a record of how the reference layers were setup in `Edit-masks.qgz`. They do not need to be resetup to edit the masks. Here we use bathymetry layers to calibrate satellite derived bathymetry layers to act as a reference for the masking. The use of the bathymetry layers is limited to calibration use along the coastline where the turbidy is the highest. 
+1. Download the bathymetry data
+```bash
+python 07a-download-qaqc-data.py
+```
+2. Build a virtual raster of the `in-data-3p\Kim_GA_SDB_2021` dataset. 
+```bash
+python 01b-create-S2-virtual-rasters.py --kimberley
+```
+Alternatively you can create the virtual raster in QGIS use `Raster > Miscellaneous > Build virtual raster ...`. Add `in-data-3p\Kim_GA_SDB_2021` directory. Save to file: `working-data\01b-S2-virtual-rasters\WA_GA_Kimberley-SDB_2021.vrt`.
+Note that the sections covering Clerke Reef, Cunningham Island and Mermaid Reef will be excluded because they are in a different projection. This is OK because we are not using these sections.
+The layer styling was adjusted to show from -6 m to -5 m. It should be noted that this particular bathymetry dataset is derived from satellite imagery and thus prone to false shallow areas in areas with very high turbidity. The boundary clipping is also prone to falsely clipping out some dark reef areas. As such we only use this dataset as a rough guide for depth. This dataset is measured against Mean Sea Level (MSL). We ideally want to map against Lowest Astronomical Tide as it better represents areas that are exposed at low tide. The tidal range varies widely across northern Australia. In areas with a low tidal range a depth of -4 m would always be subtidal, but in areas with a high tidal range the area would be frequently exposed. 
+3. Add the AHO ENC Series marine charts as a depth reference
+The AHO marine charts doesn't have detailed coverage of many inshore areas. We focus on areas where there depth soundings that are -1 m - 1 m LAT, and compare these to the Kim_GA_SDB_2021 and the thresholds chosen in the rough reef mask.  
+
+We find that the Kim_GA_SDB_2021 dataset excludes areas that are highly turbid and in areas where the tidal range is high it doesn't fully represent the areas exposed at low tide. For example in the flats just north of Yule Entrance (WA) (Latitude: -16.2514, Longitude: 124.39548)the bathymetry dataset is limited to -2.5 m, however the tidal range is > 10 m and so LAT is much lower. This means that the tidal flat based on the Kim_GA_SDB_2021 dataset would be approaximately 350 m. The AHO marine charts show the flat to be 1.4 km wide. The low-tide Sentinel composite imagery shows an exposed tidal flat 1.3 km across. This matches the extend observed by the GeoScience Australia DEA Intertidal extent, with the outer extent corresponding to a 5% exposure. This indicates that the low tide satellite observations include nearly the full tidal range, close to LAT.
+This layer was added as a new WMS Connection.
+- **Name**: AHO ENC Series
+- **URL**: https://services.hydro.gov.au/site1/services/Basemaps/AHOENCSeries/ImageServer/WMSServer
+This layer was then styled with inverted colours and an Addition image blending method so that the chart could be blended with the other bathmetry layers.
+
+
+
+
+### Using bathymetry data
+We intentionally don't used available bathymetry data for the masking because we reserve this data for validation. We do however use portions the bathymetry to roughly calibrate some contrast enhanced versions of the satellite data to act as depth guides for the mapping. 
+
+
+
+
 ## Reproducing the Dataset
 
 Run the scripts sequentially to reproduce the dataset. Details for the command line switches for each script to reproduce the dataset are provided in the doc string at the top of each script. For parallel processing, use the `--split` and `--index` arguments.
@@ -198,3 +287,63 @@ This accuracy assessment is however flawed in several ways:
 2. Many shallow features are ambiguous in the satellite imagery, making determining the true boundary error prone regardless of the amount of time spent on each assessment.
 3. In shallow soft sediment areas definition of this dataset is only loosely defined. This dataset is intended to act as a visual clipping mask with the depth threshold varying with the water clarity. This makes it difficult to determine the true boundary that should have been mapped difficult, particularly in areas where the image gradients are low. To compensate for this in low gradient, visually uncertain areas the accuracy assessment vertex was positioned so that the measured error (difference with the original vertex position) corresponded to the level of uncertainty.
 4. The reference imagery used for determining the true boundaries is 10 m resolution. This low resolution, combined with image uncertainty makes it difficult to reliably determine the true boundaries better than 20 m error.
+
+# Things that are mapped
+- Intertidal zone to 0 m LAT 
+- Fringing reefs (rocky and coral)
+- Fringing probable seagrass
+- Platform reefs (rocky and coral)
+- Sand banks (raised areas of sediment above surrounding seafloor)
+
+# Rough Reef Shallow Mask versions
+Shapefile, Shapefile size (KB), Features, Time Northern AU (hr), Time GBR (hr), Total (hr)
+AU_AIMS_NESP-MaC-3-17_Rough-reef-shallow-mask_18hr.shp, 903, 2583, 18.3, 0, 18.3
+AU_AIMS_NESP-MaC-3-17_Rough-reef-shallow-mask_39hr.shp, 1871, 5135, 36.5, 2.58, 39.08
+AU_AIMS_NESP-MaC-3-17_Rough-reef-shallow-mask_57hr.shp, 2598, 7126, 52.87, 4.32, 57.19
+AU_AIMS_NESP-MaC-3-17_Rough-reef-shallow-mask_87hr.shp, 3583, 7733, 77.18, 9.86, 87.04
+
+In this version we improved the mapping of the intertidal region to more closely align with LAT using the remote sensing LAT indicators and the AHOENC series to locally calibrate the indicators.
+
+Tracking notes for the digitisation of the mask:
+
+
+9:49 9:58 9 min 2621 KB 7135 features
+7:01 9:40 2hr 39 min 2690 KB 7142 features
+10:09 11:00 51 min 2720 KB 7144 features
+11:47 12:28 41 min 2746 KB 7152 features
+4:40 5:09 29 min 2764 KB 7155 features
+5"32 6:26 54 min 2805 KB 7190 features
+9 37 10:05 28 min 2822 KB 7198 features
+
+7:01  9:05 2h 4 min 2904 KB 7219 features
+9:06 9:13 7 min 2907 KB 7216 features 
+3:42 5:18 1 hr 36 min 2975 KB 7278 features
+5:20 6:11 51 min 3011 KB 7321 features
+8:35 9:57 1 hr 22 min 3053 KB GBR 7396 features
+6:44 9:40 2 hr 56 min 3170 KB 7475 features (~1:30 on GBR)
+11:06 12:07 1 hr 1 min 3208 KB 7499 features
+12:48 12:58 10 min 3214 KB 7505 features
+2:14 4:18 2 hr 4 min 3281 KB 7584 features GBR
+4:20 5:36 2 hr 16 min 3316 KB 7610 features
+5:38 5:54 16 min 3326 KB 7614 features
+
+#Checking
+8:21 8:34 8:40 9:41 1 hr 14 min 3395 KB 7629 features
+6:16 8:22 2 hr 6 min 3505 KB 7643 features
+9:06 10:27 1 hr 1 min 3546 KB 7686 features
+2:30 2:53 23 min 3563 KB 7695 features
+5:09 5:38 29 min 3583 KB 7751 features
+8:24 8:42 18 min 3583 KB 7751 features
+New 22.48 hours Northern Au, 4.93 hours GBR
+Total: 75.35 hours Northern Au, 9.86 hours GBR (Version 85 hr)
+
+# LAT fix up
+8:06 9:26 1hr 20 min 3581 KB 7744 features
+11:37 12:37 30 min 3582 KB 7733 features
+Total: 77.2 hours Northern AU, 9.86 hours GBR (Version 87 hr)
+
+
+
+5:24 5:41 12 KB 16 features GBR
+6:29 6:37 17 KB 24 features 
+7:23 7:41 
