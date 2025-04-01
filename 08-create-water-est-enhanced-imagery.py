@@ -100,7 +100,7 @@ CONTRAST_OPTIONS = {
 }
 
 LAND_MASK_RASTER_BASE_PATH = 'working-data/04-land_mask_rasters'
-LAND_MASK_SHP = 'in-data-3p/AU_AIMS_Coastline_50k_2024/Split/AU_NESP-MaC-3-17_AIMS_Aus-Coastline-50k_2024_V1-1_split.shp'
+LAND_MASK_SHP = 'data/in-3p/AU_AIMS_Coastline_50k_2024/Split/AU_NESP-MaC-3-17_AIMS_Aus-Coastline-50k_2024_V1-1_split.shp'
 
 GAUSSIAN_SIGMA = 0.3
 GAUSSIAN_KERNEL_SIZE = (3, 3)
