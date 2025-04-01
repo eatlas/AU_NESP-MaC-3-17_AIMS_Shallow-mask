@@ -18,11 +18,13 @@ The merge processing time is highly variable and some merges take several hours.
 The version and sigma are used to determine the filenames of the input and output files.
 
 The following are the command lines used to reproduce the full dataset:
+python 06a-merge-scene-masks.py --region NorthernAU --detectors VLow --version 1-1 --sigma 40
 python 06a-merge-scene-masks.py --region NorthernAU --detectors Low --version 1-1 --sigma 40
 python 06a-merge-scene-masks.py --region NorthernAU --detectors Medium --version 1-1 --sigma 40
 python 06a-merge-scene-masks.py --region NorthernAU --detectors High --version 1-1 --sigma 40
 python 06a-merge-scene-masks.py --region NorthernAU --detectors VHigh --version 1-1 --sigma 40
 
+python 06a-merge-scene-masks.py --region GBR --detectors VLow --version 1-1 --sigma 40
 python 06a-merge-scene-masks.py --region GBR --detectors Low --version 1-1 --sigma 40
 python 06a-merge-scene-masks.py --region GBR --detectors Medium --version 1-1 --sigma 40
 python 06a-merge-scene-masks.py --region GBR --detectors High --version 1-1 --sigma 40

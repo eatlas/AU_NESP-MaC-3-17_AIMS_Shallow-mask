@@ -3,7 +3,7 @@ from pyproj import CRS
 import os
 
 # Create an instance of the DataDownloader class
-downloader = DataDownloader(download_path="in-data-3p")
+downloader = DataDownloader(download_path="data/in-3p")
 VERSION = '1-1'
 
 print("Downloading source data files. This will take a while ...")
@@ -39,6 +39,15 @@ downloader.download_and_unzip(direct_download_url, 'GBR_AIMS_Complete-GBR-feat_V
 # that fails to load correctly in stages 3.
 gbr_shapefile = os.path.join(downloader.download_path, 'GBR_AIMS_Complete-GBR-feat_V1b', 'TS_AIMS_NESP_Torres_Strait_Features_V1b_with_GBR_Features.shp')
 replace_prj_with_epsg_4283(gbr_shapefile)
+
+
+# --------------------------------------------------------
+# McNeil, M.A., Webster, J.M., Beaman, R.J. et al. New constraints on the spatial distribution and morphology of the Halimeda bioherms of the Great Barrier Reef, Australia. Coral Reefs 35, 1343–1355 (2016). https://doi.org/10.1007/s00338-016-1492-2
+# https://static-content.springer.com/esm/art%3A10.1007%2Fs00338-016-1492-2/MediaObjects/338_2016_1492_MOESM1_ESM.zip
+# Also available from https://geoserver.imas.utas.edu.au/geoserver/seamap/wfs?version=1.0.0&request=GetFeature&typeName=SeamapAus_QLD_Halimeda_bioherms_2016&outputFormat=SHAPE-ZIP
+# https://metadata.imas.utas.edu.au/geonetwork/srv/eng/catalog.search#/metadata/b8475bea-e24e-4374-8090-ef06514b951d
+direct_download_url = 'https://static-content.springer.com/esm/art%3A10.1007%2Fs00338-016-1492-2/MediaObjects/338_2016_1492_MOESM1_ESM.zip'
+downloader.download_and_unzip(direct_download_url, 'GBR_USYD_Halimeda-bioherms_2016', flatten_directory=True)
 
 downloader.download_path = "in-data"
 # --------------------------------------------------------

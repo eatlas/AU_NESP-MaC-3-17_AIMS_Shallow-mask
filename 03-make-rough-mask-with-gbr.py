@@ -18,9 +18,9 @@ Output: A single shapefile (EPSG:4326) with combined and simplified geometries s
 
 def main():
     # Define file paths
-    input1 = 'in-data-3p/GBR_AIMS_Complete-GBR-feat_V1b/TS_AIMS_NESP_Torres_Strait_Features_V1b_with_GBR_Features.shp'
-    input2 = 'in-data/AU_Rough-reef-shallow-mask/AU_AIMS_NESP-MaC-3-17_Rough-reef-shallow-mask_Base.shp'
-    output_path = 'working-data/03-rough-reef-mask_poly/AU_Rough-reef-shallow-mask-with-GBR.shp'
+    input1 = 'data/in-3p/GBR_AIMS_Complete-GBR-feat_V1b/TS_AIMS_NESP_Torres_Strait_Features_V1b_with_GBR_Features.shp'
+    input2 = 'data/in/AU_Rough-reef-shallow-mask/AU_AIMS_NESP-MaC-3-17_Rough-reef-shallow-mask_87hr.shp'
+    output_path = 'working-data/03-rough-reef-mask_poly/AU_Rough-reef-shallow-mask_87hr_GBR.shp'
     
     t = TimePrint()
     # Create output directory if it doesn't exist

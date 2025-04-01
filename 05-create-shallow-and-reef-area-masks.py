@@ -90,6 +90,8 @@ of the script.
 The following corresponds to the command line calls that were used to prepare the final dataset:
 
 Use two processes each to speed up calculations:
+python 05-create-shallow-and-reef-area-masks.py --split 2 --index 0 --region NorthernAU --detectors VLow --sigma 40
+python 05-create-shallow-and-reef-area-masks.py --split 2 --index 1 --region NorthernAU --detectors VLow --sigma 40
 python 05-create-shallow-and-reef-area-masks.py --split 2 --index 0 --region NorthernAU --detectors Low --sigma 40
 python 05-create-shallow-and-reef-area-masks.py --split 2 --index 1 --region NorthernAU --detectors Low --sigma 40
 python 05-create-shallow-and-reef-area-masks.py --split 2 --index 0 --region NorthernAU --detectors Medium --sigma 40
@@ -99,6 +101,7 @@ python 05-create-shallow-and-reef-area-masks.py --split 2 --index 1 --region Nor
 python 05-create-shallow-and-reef-area-masks.py --split 2 --index 1 --region NorthernAU --detectors VHigh --sigma 40
 python 05-create-shallow-and-reef-area-masks.py --split 2 --index 0 --region NorthernAU --detectors VHigh --sigma 40
 
+python 05-create-shallow-and-reef-area-masks.py --split 1 --index 0 --region GBR --detectors VLow --sigma 40
 python 05-create-shallow-and-reef-area-masks.py --split 1 --index 0 --region GBR --detectors Low --sigma 40
 python 05-create-shallow-and-reef-area-masks.py --split 1 --index 0 --region GBR --detectors Medium --sigma 40
 python 05-create-shallow-and-reef-area-masks.py --split 1 --index 0 --region GBR --detectors High --sigma 40
@@ -115,7 +118,7 @@ SCRIPT_NUMBER = '05'
 WORKING_PATH = 'working-data'
 
 # Location of the top level directory for the Sentinel 2 composite imagery
-S2_IMG_PATH = 'in-data-3p/AU_AIMS_S2-comp'
+S2_IMG_PATH = 'data/in-3p/AU_AIMS_S2-comp'
 
 # I am storing the imagery in a different path than the 01-download-sentinel2.py
 #S2_IMG_PATH = 'D:/AU_NESP-MaC-3-17_AIMS_S2-comp/data/geoTiffs'
@@ -124,12 +127,12 @@ S2_IMG_PATH = 'in-data-3p/AU_AIMS_S2-comp'
 # ensure that the features mapped contain a small overlap with the land. This will allow
 # final clipping to be done, right at the end of manual processing, ensuring that there 
 # are not any holes on the land side of the features.
-LAND_MASK_SHP = 'in-data-3p/AU_AIMS_Coastline_50k_2024/Split/AU_NESP-MaC-3-17_AIMS_Aus-Coastline-50k_2024_V1-1_split.shp'
+LAND_MASK_SHP = 'data/in-3p/AU_AIMS_Coastline_50k_2024/Split/AU_NESP-MaC-3-17_AIMS_Aus-Coastline-50k_2024_V1-1_split.shp'
 
 # This shapefile is used to remove features. It should be used to mask areas of high noise
 # where there is definitely no reefs. This is intended to be a rough bulk cleanup to ensure
 # the output shapefiles are reasonably small in the output. 
-CLEANUP_MASK_SHP = 'in-data/AU_Cleanup-remove-mask/AU_AIMS_NESP-MaC-3-17_Cleanup-remove-mask.shp'
+CLEANUP_MASK_SHP = 'data/in/AU_Cleanup-remove-mask/AU_AIMS_NESP-MaC-3-17_Cleanup-remove-mask.shp'
 
 LAND_MASK_BUFFER = 5   # Match with 04-create-water-_with_mask.py. Use to find water estimate files.
                        # Not used in the analysis, just for finding the input files.
@@ -231,17 +234,18 @@ TRIM_PIXELS = 10    # Amount of pixels to trim off the outer border of the image
 
 OFFSHORE_SENSITIVITY = 0.03     # base level sensitivity for offshore detector
 MIDSHELF_SENSITIVITY = 0.05     # base level sensitivity for midshelf detector
-INSHORE_SENSITIVITY = 0.03      # base level sensitivity for inshore detector V1
+# INSHORE_SENSITIVITY = 0.03      # base level sensitivity for inshore detector V1
 INSHORE_SENSITIVITY = 0.03      # base level sensitivity for inshore detector V1-1
 
 # Scaling of the base senstivity for the mask sensitivitiy
-LOW_SCALAR = 1.5
+VLOW_SCALAR = 2
+LOW_SCALAR = 1.4
 MEDIUM_SCALAR = 1
 HIGH_SCALAR = 0.7
 
 # Our goal with this level of sensitivity is to better map out the ancient reefs off the Pilbra
 # This sensitivity will be too high is some regions resulting in excessive noise.
-VHIGH_SCALAR = 0.4          
+VHIGH_SCALAR = 0.5          
 
 # Set the scalar for the inshore detector higher as we were picking up too many extraneous
 # features for the results to be useful. Additionally the boundaries of features we would 
@@ -273,7 +277,7 @@ BASE_MIDSHELF_DETECTOR = {
         "name":"base_midshelf",              
         "detection_threshold":MIDSHELF_SENSITIVITY,     #V5: 0.05, V6: 0.03 V13: 0.04 
         #"noise_reduction_median":21,    # pixels. Detecting deeper noisy features so filter more. V1:21
-        "noise_reduction_median":17,    # pixels. Detecting deeper noisy features so filter more. V1-1: 17
+        "noise_reduction_median":21,    # pixels. Detecting deeper noisy features so filter more. V1-1: 17
         "noise_reduction_gaussian":1,
         "bands":[1,2],                  # Green, Blue
         "image":"All tide",
@@ -286,8 +290,17 @@ BASE_INSHORE_DETECTOR = {
         "name":"base_inshore",
         "detection_threshold":INSHORE_SENSITIVITY,    # 
         #"noise_reduction_median":17,    #V1
-        "noise_reduction_median":9,
-        "noise_reduction_gaussian":0,
+        "noise_reduction_median":21,    # V1-1 - Make sure we have a smooth boundary. This will 
+                                        # filter out small reefs (not ideal) but these will be
+                                        # added back from the manual reef mapping. 
+                                        # Our goal is to make a mask that is suitable for the
+                                        # UQ habitat mapping, which will be a combination of
+                                        # this dataset, the reef boundary mapping and a manual
+                                        # seagrass mapping. This dataset is responsible for having
+                                        # a clean boundary for optically shallow areas along the coastline,
+                                        # not necessarily to map all the reefs.
+                                
+        "noise_reduction_gaussian":1,
         "bands":[0,1,2],                # Red, Green and Blue
         "image":"Low tide",
         "denominator_offset":350,
@@ -608,6 +621,23 @@ def main():
     low_tide_water_dir = f'{WORKING_PATH}/04-s2_{LOW_TIDE_STYLE}_{image_code}/{region}'
     all_tide_water_dir = f'{WORKING_PATH}/04-s2_{ALL_TIDE_STYLE}_{image_code}/{region}'
 
+    very_low_mask_detectors = [
+        { 
+            **BASE_OFFSHORE_DETECTOR,
+            "name":"offshore",
+            "detection_threshold":OFFSHORE_SENSITIVITY*VLOW_SCALAR
+        },
+        { 
+            **BASE_MIDSHELF_DETECTOR,
+            "name":"midshelf",
+            "detection_threshold":MIDSHELF_SENSITIVITY*VLOW_SCALAR
+        },
+        { 
+            **BASE_INSHORE_DETECTOR,
+            "name":"inshore",
+            "detection_threshold":INSHORE_SENSITIVITY*VLOW_SCALAR
+        }
+    ]
 
     low_mask_detectors = [
         { 
@@ -686,6 +716,7 @@ def main():
 
 
     detector_options = {
+        'VLow': very_low_mask_detectors,
         'Low': low_mask_detectors,
         'Medium': medium_mask_detectors,
         'High': high_mask_detectors,

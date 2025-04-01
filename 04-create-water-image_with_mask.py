@@ -66,6 +66,8 @@ The second stage blends the rough masked areas (which are now replaced with the 
 The following corresponds to the command line calls that were used to prepare the final dataset:
 
 Version 18
+conda activate reef_maps2
+
 python 04-create-water-image_with_mask.py --split 1 --index 0 --style low_tide_true_colour --sigma 40 --region NorthernAU
 python 04-create-water-image_with_mask.py --split 2 --index 0 --style 15th_percentile --sigma 40 --region NorthernAU
 python 04-create-water-image_with_mask.py --split 2 --index 1 --style 15th_percentile --sigma 40 --region NorthernAU
@@ -111,10 +113,10 @@ SCRIPT_NUMBER = '04'
 
 # Parent directory of the sentinel 2 image composites. Assumes the images are organised
 # into style/regions as sub-folders.
-S2_IMAGE_PARENT_PATH = 'in-data-3p/AU_AIMS_S2-comp' # Default if downloaded with 01-download-sentinel2.py
+S2_IMAGE_PARENT_PATH = 'data/in-3p/AU_AIMS_S2-comp' # Default if downloaded with 01-download-sentinel2.py
 
 # Location of the coastline dataset
-LAND_MASK_SHP = 'in-data-3p/AU_AIMS_Coastline_50k_2024/Split/AU_NESP-MaC-3-17_AIMS_Aus-Coastline-50k_2024_V1-1_split.shp'
+LAND_MASK_SHP = 'data/in-3p/AU_AIMS_Coastline_50k_2024/Split/AU_NESP-MaC-3-17_AIMS_Aus-Coastline-50k_2024_V1-1_split.shp'
 
 # Start of the raster version filename of the land mask
 LAND_MASK_PREFIX = 'AU_AIMS_Coastline_50k_2024'
@@ -123,7 +125,7 @@ LAND_MASK_PREFIX = 'AU_AIMS_Coastline_50k_2024'
 LAND_MASK_RASTER_BASE_PATH = f'working-data/{SCRIPT_NUMBER}-land_mask_rasters'
 
 # Location of the manual rough reef mask
-REEF_MASK_SHP = 'working-data/03-rough-reef-mask_poly/AU_Rough-reef-shallow-mask-with-GBR.shp'
+REEF_MASK_SHP = 'working-data/03-rough-reef-mask_poly/AU_Rough-reef-shallow-mask_87hr_GBR.shp'
 
 # cache of rendered masks 
 REEF_MASK_RASTER_BASE_PATH = f'working-data/{SCRIPT_NUMBER}-rough-reef-mask_rasters'

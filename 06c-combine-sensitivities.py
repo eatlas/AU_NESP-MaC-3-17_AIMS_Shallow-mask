@@ -19,6 +19,7 @@ Commands used to reproduce the dataset:
 python 06c-combine-sensitivities.py --poly-sensitivity VHigh --keep-sensitivity High --version 1-1
 python 06c-combine-sensitivities.py --poly-sensitivity High --keep-sensitivity Medium --version 1-1
 python 06c-combine-sensitivities.py --poly-sensitivity Medium --keep-sensitivity Low --version 1-1
+python 06c-combine-sensitivities.py --poly-sensitivity Low --keep-sensitivity VLow --version 1-1
 """
 
 BASE_PATH = 'working-data/06-merge'
@@ -26,9 +27,9 @@ OUTPUT_PATH = 'out-data'
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="Combine outputs from two sensitivity levels into one shapefile.")
-parser.add_argument('--poly-sensitivity', type=str, required=True, choices=['Low', 'Medium', 'High', 'VHigh'],
+parser.add_argument('--poly-sensitivity', type=str, required=True, choices=['VLow','Low', 'Medium', 'High', 'VHigh'],
                     help="Sensitivity level to use for the polygons in the final dataset.")
-parser.add_argument('--keep-sensitivity', type=str, required=True, choices=['Low', 'Medium', 'High', 'VHigh'],
+parser.add_argument('--keep-sensitivity', type=str, required=True, choices=['VLow','Low', 'Medium', 'High', 'VHigh'],
                     help="Sensitivity level to use to determine inclusion of a polygon.")
 parser.add_argument('--version', type=str, default='1', help="Version of the input data to process.")
 

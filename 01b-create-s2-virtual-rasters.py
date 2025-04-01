@@ -17,6 +17,7 @@ Commands used to reproduce this dataset:
 python 01b-create-S2-virtual-rasters.py --style 15th_percentile --region all
 python 01b-create-S2-virtual-rasters.py --style low_tide_true_colour --region all
 python 01b-create-S2-virtual-rasters.py --style low_tide_infrared --region all
+python 01b-create-S2-virtual-rasters.py --kimberley
 
 Alternative Method (Using QGIS):
 If you cannot run this script in Python or do not have `gdalbuildvrt` installed, you can create virtual rasters directly in QGIS:
@@ -26,12 +27,13 @@ If you cannot run this script in Python or do not have `gdalbuildvrt` installed,
 4. Adjust settings as needed (e.g., resolution, CRS) and click "Run".
 5. The resulting VRT file can be loaded into QGIS for visualization or further analysis.
 """
-
 import os
 import glob
 import argparse
 import subprocess
 from pathlib import Path
+
+output_dir = os.path.abspath(os.path.join("working-data", "01b-S2-virtual-rasters"))
 
 def check_gdalbuildvrt():
     """Check if gdalbuildvrt is available in the system."""
@@ -43,24 +45,14 @@ def check_gdalbuildvrt():
     except subprocess.CalledProcessError:
         return True  # gdalbuildvrt exists but another issue occurred
 
-
-def create_virtual_raster(base_path, style, region):
+def create_virtual_raster(base_path, output_dir, style, region):
     if not check_gdalbuildvrt():
         print("Error: gdalbuildvrt is not installed or not available in the system PATH.")
-        print("To install gdalbuildvrt, you can use one of the following methods:")
-        print("- Install GDAL via your package manager (e.g., apt, brew, or yum).")
-        print("- Install GDAL in your Python environment using 'pip install gdal'.")
-        print("- Ensure GDAL is properly added to your system PATH.")
         return
 
     # Define input paths
-    input_path = os.path.join(base_path, style)
-    regions = []
-
-    if region == 'all':
-        regions = ['GBR', 'NorthernAU']
-    else:
-        regions = [region]
+    input_path = os.path.abspath(os.path.join(base_path, style))
+    regions = ['GBR', 'NorthernAU'] if region == 'all' else [region]
 
     tif_files = []
     for reg in regions:
@@ -68,7 +60,7 @@ def create_virtual_raster(base_path, style, region):
         if os.path.exists(region_path):
             region_tifs = glob.glob(os.path.join(region_path, "*.tif"))
             if region_tifs:
-                tif_files.extend(region_tifs)
+                tif_files.extend([os.path.abspath(tif) for tif in region_tifs])
                 print(f"Found {len(region_tifs)} GeoTiff files in region: {reg}")
             else:
                 print(f"No GeoTiff files found in region: {reg}")
@@ -79,10 +71,9 @@ def create_virtual_raster(base_path, style, region):
         print("Error: No GeoTiff files were found. Exiting.")
         return
 
-    # Prepare output path
-    output_dir = os.path.join("working-data", "01b-S2-virtual-rasters")
+    # Prepare output paths
+    
     os.makedirs(output_dir, exist_ok=True)
-
     output_vrt = os.path.join(output_dir, f"{style}_{region}.vrt")
 
     # Create temporary file for input file list
@@ -94,13 +85,47 @@ def create_virtual_raster(base_path, style, region):
     print(f"Creating virtual raster for style: {style}, region: {region}...")
     try:
         subprocess.run([
-            "gdalbuildvrt", 
-            "-input_file_list", temp_file_list, 
+            "gdalbuildvrt",
+            "-input_file_list", temp_file_list,
             output_vrt
         ], check=True)
         print(f"Virtual raster created successfully: {output_vrt}")
     except subprocess.CalledProcessError as e:
         print(f"Error creating virtual raster: {e}")
+    finally:
+        # Clean up temporary file
+        if os.path.exists(temp_file_list):
+            os.remove(temp_file_list)
+            
+            
+def create_kimberley_vrt(output_dir):
+    """Create the special virtual raster for Kimberley SDB dataset."""
+    base_path = os.path.abspath("data/in-3p/Kim_GA_SDB_2021")
+    output_vrt = os.path.join(output_dir, "WA_GA_Kimberley-SDB_2021.vrt")
+
+    os.makedirs(output_dir, exist_ok=True)
+    # Get all GeoTIFF files in the directory
+    tif_files = glob.glob(os.path.join(base_path, "*.tif"))
+    if not tif_files:
+        print("Error: No GeoTiff files found in the Kimberley dataset. Exiting.")
+        return
+
+    # Write file list to a temporary file
+    temp_file_list = os.path.join(base_path, "kimberley_file_list.txt")
+    with open(temp_file_list, 'w') as f:
+        f.write("\n".join([os.path.abspath(tif) for tif in tif_files]))
+
+    # Create the VRT
+    print(f"Creating Kimberley virtual raster...")
+    try:
+        subprocess.run([
+            "gdalbuildvrt",
+            "-input_file_list", temp_file_list,
+            output_vrt
+        ], check=True)
+        print(f"Kimberley virtual raster created successfully: {output_vrt}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error creating Kimberley virtual raster: {e}")
     finally:
         # Clean up temporary file
         if os.path.exists(temp_file_list):
@@ -112,9 +137,13 @@ if __name__ == "__main__":
                         help="Image style to use. Default is '15th_percentile'. Valid values: 'low_tide_true_colour', 'low_tide_infrared'")
     parser.add_argument("--region", type=str, default="NorthernAU", 
                         help="Region to combine GeoTiffs into a single virtual raster. Options: 'NorthernAU', 'GBR', or 'all'")
+    parser.add_argument("--kimberley", action="store_true", 
+                        help="Create the Kimberley virtual raster (special case).")
 
     args = parser.parse_args()
 
-    BASE_PATH = "in-data-3p/AU_AIMS_S2-comp"
-
-    create_virtual_raster(BASE_PATH, args.style, args.region)
+    if args.kimberley:
+        create_kimberley_vrt(output_dir)
+    else:
+        BASE_PATH = os.path.join("data/in-3p", "AU_AIMS_S2-comp")
+        create_virtual_raster(BASE_PATH, output_dir, args.style, args.region)
